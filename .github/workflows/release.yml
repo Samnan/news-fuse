@@ -107,7 +107,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v${{ needs.version.outputs.version }}
-          releaseName: News Fuse v${{ needs.version.outputs.version }}
+          releaseName: News_Fuse_v${{ needs.version.outputs.version }}
           releaseBody: Please note that MacOS builds are not notorized. It may or may not run on your system directly.
           releaseDraft: false
           prerelease: false
