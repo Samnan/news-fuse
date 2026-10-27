@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Georgia", serif;
+}
+
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  @apply bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 font-sans text-[14px];
+  user-select: none;
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(0 0 0 / 0.18) transparent;
+}
+.dark .scroll-thin {
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+}
+
+/* Reader content typography */
+.reader {
+  user-select: text;
+  @apply font-serif text-[17px] leading-[1.7] text-neutral-800 dark:text-neutral-200;
+}
+.reader > *:first-child {
+  margin-top: 0;
+}
+.reader p,
+.reader ul,
+.reader ol,
+.reader blockquote,
+.reader pre,
+.reader figure,
+.reader table {
+  @apply my-4;
+}
+.reader h1,
+.reader h2,
+.reader h3,
+.reader h4 {
+  @apply font-sans font-semibold tracking-tight mt-8 mb-3 text-neutral-900 dark:text-neutral-50;
+}
+.reader h1 { @apply text-2xl; }
+.reader h2 { @apply text-xl; }
+.reader h3 { @apply text-lg; }
+.reader a {
+  @apply text-sky-700 dark:text-sky-400 underline decoration-sky-300/60 underline-offset-2;
+}
+.reader img,
+.reader video {
+  @apply max-w-full h-auto rounded-md mx-auto;
+}
+.reader figcaption {
+  @apply text-xs text-neutral-500 text-center mt-2 font-sans;
+}
+.reader ul { @apply list-disc pl-6; }
+.reader ol { @apply list-decimal pl-6; }
+.reader li { @apply my-1; }
+.reader blockquote {
+  @apply border-l-2 border-neutral-300 dark:border-neutral-700 pl-4 italic text-neutral-600 dark:text-neutral-400;
+}
+.reader pre {
+  @apply font-mono text-[13px] leading-relaxed bg-neutral-100 dark:bg-neutral-900 rounded-md p-4 overflow-x-auto;
+}
+.reader code {
+  @apply font-mono text-[0.9em] bg-neutral-100 dark:bg-neutral-900 px-1 py-0.5 rounded;
+}
+.reader pre code {
+  @apply bg-transparent p-0;
+}
+.reader table {
+  @apply w-full text-sm border-collapse font-sans;
+}
+.reader th,
+.reader td {
+  @apply border border-neutral-200 dark:border-neutral-800 px-2 py-1 text-left align-top;
+}
+.reader hr {
+  @apply border-neutral-200 dark:border-neutral-800 my-8;
+}

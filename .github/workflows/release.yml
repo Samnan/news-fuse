@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+          last_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1)"
+
+          if [[ -z "$last_tag" ]]; then
+            version="1.0.0"
+            echo "No previous tag, starting at $version"
+          else
+            # Files touched since the last release (equals the commit's files for a single-commit push)
+            changed="$(git diff --name-only "$last_tag" HEAD | wc -l | tr -d ' ')"
+            IFS=. read -r major minor patch <<< "${last_tag#v}"
+
+            if (( changed > 50 )); then
+              major=$((major + 1)); minor=0; patch=0
+            elif (( changed > 10 )); then
+              minor=$((minor + 1)); patch=0
+            else
+              patch=$((patch + 1))
+            fi
+
+            version="$major.$minor.$patch"
+            echo "Last tag $last_tag, $changed files changed -> $version"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Set version ${{ needs.version.outputs.version }}
+        shell: bash
+        run: |
+          node -e '
+            const fs = require("fs");
+            const v = process.argv[1];
+            for (const f of ["package.json", "src-tauri/tauri.conf.json"]) {
+              const j = JSON.parse(fs.readFileSync(f, "utf8"));
+              j.version = v;
+              fs.writeFileSync(f, JSON.stringify(j, null, 2) + "\n");
+            }
+          ' "${{ needs.version.outputs.version }}"
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v${{ needs.version.outputs.version }}
+          releaseName: News Fuse v${{ needs.version.outputs.version }}
+          releaseBody: Please note that MacOS builds are not notorized. It may or may not run on your system directly.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
